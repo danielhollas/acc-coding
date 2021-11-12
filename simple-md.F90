@@ -16,6 +16,7 @@ program simple_md
    real(8), dimension(N_PARTICLES) :: fx, fy
 
    real(8) :: potential_energy, kinetic_energy
+   real(8) :: time 
    integer :: istep
    integer :: i
    
@@ -50,14 +51,29 @@ program simple_md
       vx = vx + fx / mass * DT * 0.5D0
       vy = vy + fy / mass * DT * 0.5D0
 
-      kinetic_energy = 0.0D0
-      do i=1, N_PARTICLES
-         kinetic_energy = kinetic_energy + 0.5D0 * mass(i) * (vx(i)**2 + vy(i)**2)
-      end do
-
-      !write (*, *) istep, potential_energy, potential_energy + kinetic_energy
-      write (*, *) istep, get_distance(x, y, 1, 2)
+      if (modulo(istep, N_PRINT) == 0) then
+         kinetic_energy = 0.0D0
+         do i=1, N_PARTICLES
+            kinetic_energy = kinetic_energy + 0.5D0 * mass(i) * (vx(i)**2 + vy(i)**2)
+         end do
+         time = DT * (istep - 1)
+         call print_energies(potential_energy, kinetic_energy, time)
+      end if
 
    end do
 
 end program
+
+subroutine print_energies(potential_energy, kinetic_energy, time)
+   real(8), intent(in) :: potential_energy, kinetic_energy
+   real(8), intent(in) :: time
+   integer :: iunit
+
+   open(newunit=iunit, file='energy.dat', access='append')  
+      write (iunit, *) time, potential_energy, potential_energy + kinetic_energy
+   close(iunit)
+end subroutine print_energies
+
+subroutine print_trajectory(x, y, istep)
+   ! Homework
+end subroutine print_trajectory
