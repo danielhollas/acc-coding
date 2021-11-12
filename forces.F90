@@ -1,5 +1,6 @@
 
 module forces_mod
+   implicit none
    character(len=20) :: potential = 'harmonic'
    real(8) :: r_eq = 1.0D0
    real(8) :: force_constant = 0.001D0
