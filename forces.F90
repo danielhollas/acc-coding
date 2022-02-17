@@ -2,8 +2,11 @@
 module forces_mod
    implicit none
    character(len=20) :: potential = 'harmonic'
-   real(8) :: r_eq = 1.0D0
-   real(8) :: force_constant = 0.001D0
+   ! Bond legth of N2 molecule
+   ! https://cccbdb.nist.gov/exp2x.asp?casno=7727379
+   real(8) :: r_eq = 1.098D0
+   ! harmonic force constant in a.u. equivalent to 2359 cm^-1 vibration
+   real(8) :: force_constant = 1.47497D0
 contains
 
    subroutine calculate_forces(x, y, fx, fy, potential_energy)
