@@ -4,8 +4,10 @@ program simple_md
 
    integer, parameter :: N_PARTICLES = 2
    integer, parameter :: N_STEP = 100
-   integer, parameter :: N_PRINT = 1
-   real(8), parameter :: DT = 20.0D0
+   ! TODO: Implement printing every 2nd step
+   integer, parameter :: N_PRINT = 2
+   ! TODO: Determine suitable timestep
+   real(8), parameter :: DT = ??
    real(8), parameter :: AMU = 1823.0D0
    real(8), dimension(N_PARTICLES) :: mass
    real(8), dimension(N_PARTICLES) :: x, y
@@ -18,16 +20,12 @@ program simple_md
    real(8) :: r_eq = 1.098D0
    ! harmonic force constant in a.u. equivalent to 2359 cm^-1 vibration
    real(8) :: force_constant = 1.47497D0
-   ! TODO:
-   real(8) :: dissociation_energy = 1.0
 
-   real(8) :: potential_energy, kinetic_energy
-   real(8) :: time 
+   real(8) :: potential_energy
    real(8) :: calculate_kinetic_energy
    integer :: istep
    ! File units for output
-   integer :: uenergy, ucoords
-   integer :: i
+   integer :: ucoords
    
    ! Defining inital conditions
    ! ================================
@@ -46,7 +44,6 @@ program simple_md
    potential_energy = 0.0D0
 
    ! ================================
-   open (newunit=uenergy, file='energy.dat', action='write')
    open (newunit=ucoords, file='coords.xyz', action='write')
 
    ! MD LOOP, using Velocity Verlet integrator
@@ -63,7 +60,8 @@ program simple_md
       if (potential == 'harmonic') then
          call harmonic_forces(force_constant, r_eq, x, y, fx, fy, potential_energy)
       else if (potential == 'morse') then
-         call morse_forces(force_constant, dissociation_energy, r_eq, x, y, fx, fy, potential_energy)
+         ! TODO:
+         print *, 'Morse potential not yet implemented'
       else
          print *, 'Invalid potential'
          stop 1
@@ -72,16 +70,10 @@ program simple_md
       vx = vx + fx / mass * DT * 0.5D0
       vy = vy + fy / mass * DT * 0.5D0
 
-      if (modulo(istep, N_PRINT) == 0) then
-         kinetic_energy = calculate_kinetic_energy(N_PARTICLES, vx, vy, mass)
-         time = DT * (istep - 1)
-         write (uenergy, *) time, potential_energy, potential_energy + kinetic_energy
-         call write_coords(N_PARTICLES, x, y, ucoords)
-      end if
+      call write_coords(N_PARTICLES, x, y, ucoords)
 
    end do
 
-   close(uenergy)
    close(ucoords)
 end program
 
@@ -110,17 +102,6 @@ subroutine write_coords(natoms, x, y, channel)
    end do
 end subroutine write_coords
 
-subroutine morse_forces(k, de, r_eq, x, y, fx, fy, potential_energy)
-   implicit none
-   ! Parameters of the Morse potential
-   real(8), intent(in) :: k, de, r_eq
-   real(8), dimension(2), intent(in) :: x, y
-   real(8), dimension(2), intent(out) :: fx, fy
-   real(8), intent(out) :: potential_energy
-   write (*, *) 'ERROR: Morse potential not implemented'
-   stop 1
-end subroutine morse_forces
-
 subroutine harmonic_forces(k, r_eq, x, y, fx, fy, potential_energy)
    implicit none
    real(8), intent(in) :: k, r_eq
@@ -141,15 +122,3 @@ subroutine harmonic_forces(k, r_eq, x, y, fx, fy, potential_energy)
 
    potential_energy = 0.5D0 * k * (r - r_eq)**2
 end subroutine harmonic_forces
-
-function get_distance(x, y) result(r)
-   implicit none
-   real(8), dimension(2), intent(in) :: x, y
-   real(8) :: r
-   real(8) :: dx, dy
-
-   dx = x(1) - x(2)
-   dy = y(1) - y(2)
-   r = dx**2 + dy**2
-   r = dsqrt(r)
-end function get_distance

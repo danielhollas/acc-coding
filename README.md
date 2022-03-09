@@ -3,5 +3,5 @@ Advanced computational chemistry course at Durham University.
 
 To compile and run the example Molecular Dynamics code.
 ```sh
-gfortran forces.F90 simple-md.F90 -o simple-md && ./simple-md
+gfortran simple-md.F90 -o simple-md && ./simple-md
 ```
