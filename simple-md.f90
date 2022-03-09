@@ -12,29 +12,28 @@ program simple_md
    real(8), dimension(N_PARTICLES) :: vx, vy
    real(8), dimension(N_PARTICLES) :: fx, fy
 
-   character(len=20) :: potential = 'harmonic'
+   character(len=*), parameter :: potential = 'harmonic'
    ! Bond legth of N2 molecule
    ! https://cccbdb.nist.gov/exp2x.asp?casno=7727379
    real(8) :: r_eq = 1.098D0
    ! harmonic force constant in a.u. equivalent to 2359 cm^-1 vibration
    real(8) :: force_constant = 1.47497D0
-   ! TODO:
-   real(8) :: dissociation_energy = 1.0
+   ! TODO: Set this to a value corresponding to N2
+   real(8) :: dissociation_energy = 0.5
 
    real(8) :: potential_energy, kinetic_energy
    real(8) :: time 
-   real(8) :: calculate_kinetic_energy
+   real(8) :: calculate_kinetic_energy, get_distance
    integer :: istep
    ! File units for output
-   integer :: uenergy, ucoords
-   integer :: i
+   integer :: uenergy, ucoords, ur
    
    ! Defining inital conditions
    ! ================================
    ! Let's start with two particles bound by harmonic potential
    ! Specifically, let's simulate N2 molecule.
    x = 0.0D0
-   y = (/ 0.0D0, 1.1D0 /)
+   y = (/ 0.0D0, 1.2D0 /)
    mass(1) = 14.0067 * AMU
    mass(2) = 14.0067 * AMU
 
@@ -48,6 +47,9 @@ program simple_md
    ! ================================
    open (newunit=uenergy, file='energy.dat', action='write')
    open (newunit=ucoords, file='coords.xyz', action='write')
+   open (newunit=ur, file='r.dat', action='write')
+
+   print *, 'Using '//potential//' potential'
 
    ! MD LOOP, using Velocity Verlet integrator
    do istep = 1, N_STEP
@@ -76,6 +78,7 @@ program simple_md
          kinetic_energy = calculate_kinetic_energy(N_PARTICLES, vx, vy, mass)
          time = DT * (istep - 1)
          write (uenergy, *) time, potential_energy, potential_energy + kinetic_energy
+         write (ur, *) time, get_distance(x, y)
          call write_coords(N_PARTICLES, x, y, ucoords)
       end if
 
@@ -113,12 +116,31 @@ end subroutine write_coords
 subroutine morse_forces(k, de, r_eq, x, y, fx, fy, potential_energy)
    implicit none
    ! Parameters of the Morse potential
+   ! E_Morse = De * (1-exp(-a(r-r0)))^2
    real(8), intent(in) :: k, de, r_eq
    real(8), dimension(2), intent(in) :: x, y
    real(8), dimension(2), intent(out) :: fx, fy
    real(8), intent(out) :: potential_energy
-   write (*, *) 'ERROR: Morse potential not implemented'
-   stop 1
+   real(8) :: a
+   real(8) :: dx, dy, r, fac, ex
+
+   ! k is a harmonic force constance, parameter a
+   ! is chosed based on 2nd degree Taylor expansion 
+   ! https://en.wikipedia.org/wiki/Morse_potential#Potential_energy_function
+   a = dsqrt(k / 2.0D0 / De)
+
+   dx = x(2) - x(1)
+   dy = y(2) - y(1)
+   r = dsqrt(dx**2 + dy**2)
+
+   ex = exp(-a * (r - r_eq))
+   fac = 2 * a * ex * de * (1 - ex) / r
+
+   fx(1) = fac * dx
+   fx(2) = -fx(1)
+   fy(1) = fac * dy
+   fy(2) = -fy(1)
+   potential_energy = De * (1 - ex)**2
 end subroutine morse_forces
 
 subroutine harmonic_forces(k, r_eq, x, y, fx, fy, potential_energy)
